@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Function to abort the script with a message
+abort() {
+  echo "$1"
+  exit 1
+}
+
+# Check if running on macOS
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  abort "This uninstallation script is intended for macOS only."
+fi
+
+# Check for ARM architecture (M1 chip)
+ARCH="$(uname -m)"
+if [[ "${ARCH}" != "arm64" ]]; then
+  abort "This script is specifically for macOS with M1 chip."
+fi
+
+# Define Homebrew installation location for M1 Macs
+BREW_PREFIX="/opt/homebrew"
+
+# Check if Homebrew is installed
+if [[ ! -d "${BREW_PREFIX}" ]]; then
+  abort "Homebrew is not installed in ${BREW_PREFIX}."
+fi
+
+# Inform the user about the uninstallation process
+echo "This script will remove Homebrew and all installed packages from your system."
+read -p "Are you sure you want to continue? (y/n) " -n 1 -r
+echo    # Move to a new line
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+  abort "Uninstallation aborted by the user."
+fi
+
+# Uninstallation process
+echo "Starting the uninstallation of Homebrew..."
+
+# Remove all installed packages
+echo "Removing installed packages..."
+"${BREW_PREFIX}/bin/brew" remove --force $(brew list) --ignore-dependencies
+
+# Remove Homebrew installer
+echo "Removing Homebrew installer..."
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/uninstall.sh)"
+
+# Manually remove any remaining Homebrew files
+echo "Cleaning up remaining files..."
+sudo rm -rf "${BREW_PREFIX}"
+
+echo "Homebrew has been successfully removed from your system."
